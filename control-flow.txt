@@ -1,0 +1,86 @@
+Conditionals: 
+
+forward cmp: 
+        if (condition)
+
+forward goto: 
+        if (end of true branch) 
+        switch break 
+        loop break (after condition)
+        loop continue (before condition)
+        while loop (before body)
+        [exception handler block (goto passes by block) ]
+        [finally block (goto passes by block) ]
+
+backward cmp: 
+         while loop
+         do while loop
+
+tableswitch: 
+         switch
+
+
+=====================
+if: 
+=====================
+compare&jump END
+..
+END_IF:
+
+
+=====================
+if else: 
+=====================
+compare&jump ELSE_BRANCH
+..
+goto END_IF
+ELSE_BRANCH:
+..
+END_IF:
+
+
+=====================
+while loop: 
+=====================
+goto END
+BEGIN:
+..
+goto END (break)
+..
+goto COND (continue)
+..
+COND: compare&jump BEGIN
+
+=====================
+do while loop:
+=====================
+BEGIN:
+..
+compare&jump BEGIN
+
+=====================
+switch:
+=====================
+tableswitch
+CASE_1
+..
+goto END
+CASE_2:
+..
+goto END
+
+////////////////////////////////////////////////////////////////
+
+<if>: f_cpm(ELSE_BRANCH) <stmt>* f_goto <stmt>* ELSE_BRANCH:
+<if_else>: f_cpm(ELSE_BRANCH) <stmt>* f_goto <stmt>* ELSE_BRANCH:
+
+<while>: f_goto(WHILE_COND) WHILE_BEGIN: (<stmt> | <continue> | <break>)* WHILE_COND: b_cmp(WHILE_BEGIN) WHILE_END:
+<continue>: f_goto(WHILE_END)*
+<break>: f_goto(WHILE_COND)* 
+
+<do_while>: DO_WHILE_BEGIN: (<stmt> | <continue> | <break>)* DO_WHILE_COND: b_cmp(DO_WHILE_BEGIN) DO_WHILE_END:
+<continue>: f_goto(DO_WHILE_END)*
+<break>: f_goto(DO_DO_WHILE_COND)* 
+
+<switch>: tableswitch(CASE 1, .., DEFAULT) (CASEn: | DEFAULT: | <stmt> | goto SWITCH_END)* SWITCH_END:
+

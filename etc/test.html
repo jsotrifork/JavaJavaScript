@@ -1,0 +1,29 @@
+<html>
+<head>
+<script language="javascript" src="rt.js"></script>
+
+<script language="javascript">
+
+	// Simulate we have java.lang.System.out.print(String s):
+	java_lang_System = {
+		out : {
+			print : function(s) {
+				window.alert(s);
+			}
+		}
+	};
+
+	function printHello() {
+		
+		var cls = loadClass("com.trifork.jjs.testsuite.basic.testsubjects.PrintHello");
+
+		com_trifork_jjs_testsuite_basic_testsubjects_PrintHello.print();
+	}
+
+</script>
+</head>
+
+<body>
+	<button onclick="printHello()">Say Hello</button>
+</body>
+</html>

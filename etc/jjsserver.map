@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<jar name="jjsserver.war">
+	<file path="META-INF/trifork-app-conf.xml" from="." />
+	<file path="WEB-INF/web.xml" from="." />
+	<file path="WEB-INF/lib/asm-4.1.jar" from="u:/.m2/repository/org/ow2/asm/asm/4.1/asm-4.1.jar"/>
+	<file path="rt.js" from="../src/main/resources/rt.js" />
+	<dir path="WEB-INF/classes" from="../target/classes" />
+	<dir path="WEB-INF/classes/com/trifork/jjs/testsuite/basic/testsubjects" from="../target/test-classes/com/trifork/jjs/testsuite/basic/testsubjects" />
+	<file path="test.html" from="." />
+</jar>
