@@ -674,7 +674,6 @@ public class Java2JSMethodVisitor extends MethodVisitor {
 	}
 	@Override
 	public void visitLabel(Label label) {
-		cCtx.println("/*LABEL: " + label + "*/");
 		cCtx.print(mCtx.label(label));
 		
 		currentLabel = label;
@@ -714,6 +713,15 @@ public class Java2JSMethodVisitor extends MethodVisitor {
 	@Override
 	public void visitIincInsn(int var, int increment) {
 		currentLabel = null;
+
+		if (mCtx.isOperandStackEmpty()) {
+			// Empty operand stack means that we are not in the middle of an
+			// expression (which would be meaningful for var++/var--).
+			// Although iinc does not affect the runtime stack, do a dummy
+			// push+pop to trigger beginning of a new statement
+			mCtx.pushOperand("dummy");
+			mCtx.popOperand();
+		}
 
 		String varName = mCtx.topFrame().getLocalVars().get(var).name;
 

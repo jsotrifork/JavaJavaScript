@@ -76,7 +76,6 @@ public class MethodContext {
 		}
 
 		classCtx.out.append(";");
-		classCtx.println();
 	}
 	
 	void pushOperand(String op) {
@@ -93,6 +92,10 @@ public class MethodContext {
 		return operandStack.getFirst();
 	}
 
+	public boolean isOperandStackEmpty() {
+		return operandStack.isEmpty();
+	}
+	
 	public void pushFrame() {
 		Frame frame = new Frame(operandStack.size());
 		frameStack.push(frame);
