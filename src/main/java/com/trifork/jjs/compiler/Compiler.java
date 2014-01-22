@@ -15,9 +15,15 @@ import com.trifork.jjs.visitor.TypeOracle;
 public class Compiler {
 
 	static boolean debug = false;
+	static boolean pretty = true;
 	
+	@SuppressWarnings("resource")
 	public static String compileSingleClass(Class<?> cls) throws IOException {
-		StringWriter writer = new StringWriter();
+		Writer writer = new StringWriter();
+		
+		if (pretty) {
+			writer = new PrettyWriter(writer);
+		}
 		compileSingleClass(cls, writer);
 		
 		return writer.toString();

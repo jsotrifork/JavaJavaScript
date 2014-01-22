@@ -4,13 +4,8 @@ import com.trifork.jjs.compiler.GeneratorStream;
 
 public class ClassContext {
 	
-	private static final int INDENT_CHARS = 4;
-	private static final String lineSeparator = System.getProperty("line.separator");
 	GeneratorStream out;
-	private int scopeLevel = 0;
-	private String[] cachedIndents = { "" };
 	private TypeOracle typeOracle;  
-	private boolean newlinePending;
 	
 	
 	public ClassContext(GeneratorStream generatorStream, TypeOracle typeOracle) {
@@ -19,57 +14,20 @@ public class ClassContext {
 	}
 	
 	void print(Object s) {
-		if (newlinePending) {
-			newlinePending = false;
-			newline();
-			out.append(cachedIndents[scopeLevel]);
-		}
 		out.append(s);
 	}
 	
-	private void newline() {
-		out.append(lineSeparator);
-	}
-
 	void println(Object s) {
-		if (newlinePending) {
-			newline();
-		}
+		// Ignore attempts to add a newline..
 		print(s);
-		newlinePending = true;
 	}
 
-	void println() {
-		if (newlinePending) {
-			newline();
-		} else {
-			newlinePending = true;
-		}
-	}
-	
 	void pushScope() {
-		scopeLevel++;
-		ensureCachedIndents();
 		println(" {");
 	}
 	
-	private void ensureCachedIndents() {
-		if (scopeLevel >= cachedIndents.length) {
-			String[] tmp = new String[scopeLevel + 1];
-			System.arraycopy(cachedIndents, 0, tmp, 0, cachedIndents.length);
-			char[] ws = new char[ scopeLevel * INDENT_CHARS ];
-			for (int i = 0; i < ws.length; i++) {
-				ws[i] = ' ';
-			}
-			
-			tmp[scopeLevel] = new String(ws);
-			cachedIndents = tmp;
-		}
-
-	}
 
 	void popScope() {
-		scopeLevel--;
 		println("}");
 	}
 	
@@ -82,6 +40,4 @@ public class ClassContext {
 	public String addLocalVar() {
 		return "varName" + varNameCount++;
 	}
-
-
 }
