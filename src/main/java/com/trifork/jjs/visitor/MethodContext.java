@@ -15,7 +15,7 @@ public class MethodContext {
 	@SuppressWarnings("serial")
 	MethodContext(final ClassContext classCtx, boolean addComments) {
 		this.classCtx = classCtx;
-		controlFlow = new ControlFlow();
+		controlFlow = new ControlFlow(this);
 		if (addComments) {
 			operandStack = new ArrayDeque<String>() {
 				@Override
@@ -77,7 +77,11 @@ public class MethodContext {
 
 		classCtx.out.append(";");
 	}
-	
+
+	public void clearStatement() {
+		statementInProgress = false;
+	}
+
 	void pushOperand(String op) {
 		maybeEndStatement();
 		operandStack.push(op);
@@ -124,5 +128,16 @@ public class MethodContext {
 		return controlFlow.label(label);
 	}
 
+	public Object tableSwitch(String on, int min, int max, Label dflt, Label[] labels) {
+		return controlFlow.tableSwitch(on, min, max, dflt, labels);
+	}
+
+	public Object lookupSwitch(String on, Label dflt, int[] keys, Label[] labels) {
+		return controlFlow.lookupSwitch(on, dflt, keys, labels);
+	}
+
+	public Object endMethod() {
+		return controlFlow.endMethod();
+	}
 
 }

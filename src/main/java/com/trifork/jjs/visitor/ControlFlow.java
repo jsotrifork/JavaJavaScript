@@ -2,6 +2,8 @@ package com.trifork.jjs.visitor;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 
 import org.objectweb.asm.Label;
@@ -11,9 +13,12 @@ public class ControlFlow {
 	private IdentityHashMap<Label, LabelPlaceholder> labelMap = new IdentityHashMap<>();
 	private Deque<Control> controlStack = new ArrayDeque<Control>();
 	private Label currentLabel;
+	private MethodContext mCtx;
 
-
-
+	ControlFlow(MethodContext mCtx) {
+		this.mCtx = mCtx;
+	}
+	
 	public Object cmp(String condition, Label label) {
 		if (isForwardLabel(label)) {
 			// Forward compare-and-jump - can only be start of an if statement
@@ -24,20 +29,33 @@ public class ControlFlow {
 			// Backwards compare-and-jump - can be the end of a while or do-while control 
 			LabelPlaceholder labelPlaceholder = labelMap.get(label);
 
-			boolean isWhile = true; // TODO figure out how to differentiate between while and do-while
-			if (isWhile) {
+			Control topControl = topControl();
+			if (topControl != null && topControl instanceof Goto) {
+				// This is a while, not a do-while control
+				popControl();
 				labelPlaceholder.setText("while (" + condition + ") {");
 				return "}";
 			} else {
+				// No goto, so this is a do-while
 				labelPlaceholder.setText("do {");
 				return "} while (" + condition + ");";
 			}
+			
 		}
 	}
 
 	public Object goTo(Label label) {
 		// A goto can be translated from a number of constructs. Just add a generic Goto control for now..
 		Goto goTo = new Goto(label);
+
+		for (Control control: controlStack) {
+			Object o = control.acceptGoto(goTo);
+			if (o != null) {
+				return o;
+			}
+		}
+		
+		// No control on the stack accepted this goto as part of their flow. Push a chameleon Goto control
 		pushControl(goTo);
 
 		return goTo;
@@ -51,15 +69,37 @@ public class ControlFlow {
 		currentLabel = label;
 
 		for (Control control: controlStack) {
-			Object val = control.label(label);
+			Object val = control.acceptLabel(label);
 			if (val != null) {
 				return val;
 			}
-
 		}
 
-
 		return labelHolder;
+	}
+
+	public Object tableSwitch(String on, int min, int max, Label dflt, Label[] labels) {
+		TableSwitch tableSwitch = new TableSwitch(on, min, max, dflt, labels);
+		pushControl(tableSwitch);
+		return tableSwitch;
+	}
+	
+	public Object lookupSwitch(String on, Label dflt, int[] keys, Label[] labels) {
+		LookupSwitch lookupSwitch = new LookupSwitch(on, dflt, keys, labels);
+		pushControl(lookupSwitch);
+		return lookupSwitch;
+	}
+	
+	public Object endMethod() {
+		AggregatedResult result = new AggregatedResult();
+
+		while (topControl() != null) {
+			Object o = popControl().end();
+			if (o != null) {
+				result.add(o);
+			}
+		}
+		return result;
 	}
 
 	private boolean isForwardLabel(Label label) {
@@ -83,7 +123,13 @@ public class ControlFlow {
 
 	abstract class Control {
 
-		abstract Object label(Label label);
+		abstract Object acceptLabel(Label label);
+
+		Object end() {
+			return null;
+		}
+
+		abstract Object acceptGoto(Goto goTo);
 
 	}
 
@@ -103,7 +149,7 @@ public class ControlFlow {
 		}
 
 		@Override
-		Object label(Label label) {
+		Object acceptLabel(Label label) {
 
 			if (label == this.endIfLabel) {
 
@@ -118,7 +164,8 @@ public class ControlFlow {
 					// Must be a goto..
 					Goto gotoCtrl = (Goto) top;
 
-					assert(this == popControl());
+					Control topControl = popControl();
+					assert(this == topControl);
 
 					pushControl(new Else(gotoCtrl.label));
 
@@ -126,6 +173,14 @@ public class ControlFlow {
 				}
 			}
 
+			return null;
+		}
+
+		@Override
+		Object acceptGoto(Goto goTo) {
+			// Not able to verify that this goto belongs to this if control
+			// before we see endIfLabel. Just allow a generic Goto control to be
+			// pushed, and we will pop it when we see the label..
 			return null;
 		}
 	}
@@ -138,12 +193,18 @@ public class ControlFlow {
 		}
 
 		@Override
-		Object label(Label label) {
+		Object acceptLabel(Label label) {
 			if (label == endElseLabel) {
 				assert(this == popControl());
 				return "}";
 			}
 
+			return null;
+		}
+
+		@Override
+		Object acceptGoto(Goto goTo) {
+			// TODO Auto-generated method stub
 			return null;
 		}
 	}
@@ -155,7 +216,13 @@ public class ControlFlow {
 		}
 
 		@Override
-		Object label(Label label) {
+		Object acceptLabel(Label label) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		Object acceptGoto(Goto goTo) {
 			// TODO Auto-generated method stub
 			return null;
 		}
@@ -163,23 +230,174 @@ public class ControlFlow {
 
 	class Goto extends Control {
 
+		// A (forward) goto is a chameleon. It may be: 
+		//  - end of true branch of an if-else control
+		//  - a switch break
+		//  - a loop break (before condition)
+		//  - a loop continue (after condition)
 		final Label label;
+		private String text = "";
 
 		Goto(Label label) {
 			this.label = label;
 		}
 
 		@Override
-		Object label(Label label) {
+		Object acceptLabel(Label label) {
 			// TODO Auto-generated method stub
 			return null;
 		}
 		
 		@Override
+		Object acceptGoto(Goto goTo) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		public void setText(String text) {
+			this.text = text ;
+		}
+
+		@Override
 		public String toString() {
-			// 
-			return "";
+			return text;
 		}
 
 	}
+
+	class TableSwitch extends Control {
+
+		private String on;
+		private int min;
+		private int max;
+		private Label defaultLabel;
+		private IdentityHashMap<Label, Integer> label2Index = new IdentityHashMap<Label, Integer>();
+		private Label[] labels;
+		private HashSet<Label> visitedLabels = new HashSet<>();
+		private HashSet<Label> endLabelCandidates = new HashSet<>();
+//		private SwitchRangeMap switchRangeMap;
+		
+		TableSwitch(String on, int min, int max, Label defaultLabel, Label[] labels) {
+			this.on = on;
+			this.min = min;
+			this.max = max;
+			this.defaultLabel = defaultLabel;
+			this.labels = labels;
+			for (int i = min; i <= max; i++) {
+				this.label2Index.put(labels[i - min], i);
+			}
+		}
+		
+		@Override
+		Object acceptLabel(Label label) {
+
+			if (endLabelCandidates.contains(label)) {
+				handleOrphanGotos();
+				Control topControl = popControl();
+				assert(topControl == this);
+				return "}";
+			}
+			
+			Integer caseValue = label2Index.get(label);
+			if (caseValue != null) {
+				// This label belongs to the current switch statement
+
+				handleOrphanGotos();
+
+				mCtx.maybeEndStatement();
+				
+				if (defaultLabel == label) {
+					visitedLabels.add(label);
+					return "default:";
+				} else {
+					
+					visitedLabels.add(label);
+					return "case " + caseValue + ":";
+				}
+
+			}	
+			return null;
+		}
+
+		private void handleOrphanGotos() {
+			// Check if control stack has an orphan goto belonging to previous case on top. 
+			while (topControl() instanceof Goto) {
+				Goto goTo = (Goto) topControl();
+				
+				// TODO: This could also be a break <LBL> referring to an outer switch or loop!
+				goTo.setText(";break;");
+				popControl();
+
+				endLabelCandidates.add(goTo.label);
+			}
+		}
+
+		@Override
+		Object acceptGoto(Goto goTo) {
+			if (goTo.label == defaultLabel) {
+				// A goto to the default label can only mean one thing: This
+				// switch control has no default case, thus defaultLabel ==
+				// endOfSwitch. In other words, this is a switch break.
+				endLabelCandidates.add(goTo.label);
+				return ";break;";
+			}
+
+			return null;
+		}
+
+		@Override
+		Object end() {
+			handleOrphanGotos();
+			return "}";
+		}
+		
+		@Override
+		public String toString() {
+			return "switch (" + on + ") {";
+		}
+
+	}
+
+	class LookupSwitch extends Control {
+
+		private String on;
+		private Label defaultLabel;
+		private HashMap<Label, Integer> map = new HashMap<Label, Integer>();
+		
+		LookupSwitch(String on, Label defaultLabel, int[] keys, Label[] labels) {
+			this.on = on;
+			this.defaultLabel = defaultLabel;
+			
+			for (int i = 0; i < keys.length; i++) {
+				this.map.put(labels[i], keys[i]);
+			}
+		}
+		
+		@Override
+		Object acceptLabel(Label label) {
+			if (defaultLabel == label) {
+				return "default:";
+			} else {
+				Integer caseValue = map.get(label);
+				if (caseValue != null) {
+					// This label belongs to the current switch statement
+					return "case " + caseValue + ":";
+				}	
+			}
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return "switch (" + on + ") {";
+		}
+
+		@Override
+		Object acceptGoto(Goto goTo) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	}
+
+
 }

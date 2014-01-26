@@ -167,6 +167,8 @@ public class Java2JSMethodVisitor extends MethodVisitor {
 		case Opcodes.F_CHOP: 
 		case Opcodes.F_FULL: 
 		}
+
+		//cCtx.print("-----visitFrame(" + type + ", " + nLocal + ", " + nStack + ")------\n");
 	}
 
 	@Override
@@ -741,18 +743,16 @@ public class Java2JSMethodVisitor extends MethodVisitor {
 			Label... labels) {
 		currentLabel = null;
 
-		if (mv != null) {
-			mv.visitTableSwitchInsn(min, max, dflt, labels);
-		}
+		cCtx.print(mCtx.tableSwitch(mCtx.popOperand(), min, max, dflt, labels));
+		mCtx.clearStatement();
 	}
 
 	@Override
 	public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
 		currentLabel = null;
 
-		if (mv != null) {
-			mv.visitLookupSwitchInsn(dflt, keys, labels);
-		}
+		cCtx.print(mCtx.lookupSwitch(mCtx.popOperand(), dflt, keys, labels));
+		mCtx.clearStatement();
 	}
 
 	@Override
@@ -794,5 +794,6 @@ public class Java2JSMethodVisitor extends MethodVisitor {
 		mCtx.maybeEndStatement();
 		cCtx.popScope();
 		mCtx.popFrame();
+		cCtx.print(mCtx.endMethod());
 	}
 }
