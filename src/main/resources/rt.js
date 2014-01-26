@@ -17,3 +17,30 @@ function loadClass(className) {
 
 	return res;
 }
+
+//// core classes follow: 
+
+java_lang_Object = (function () {
+    function java_lang_Object() {
+    }
+    java_lang_Object.prototype.getClass = function () {
+    	return java_lang_Object;
+    }
+    java_lang_Object.prototype.hashCode = function () {
+    	if (!this.__hashCode) {
+    		this.__hashCode = id++;
+    	}
+    	return this.hashCode;
+    }
+    java_lang_Object.prototype.equals = function(other) {
+    	return this === other;
+    }
+
+    java_lang_Object.prototype.toString = function() {
+//        return getClass().getName() + "@" + Integer.toHexString(hashCode());
+        return getClass().getName() + "@" + hashCode();
+    }
+    
+    return java_lang_Object;
+}
+)();

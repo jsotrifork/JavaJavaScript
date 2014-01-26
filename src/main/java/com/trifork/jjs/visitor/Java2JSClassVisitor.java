@@ -29,16 +29,16 @@ public class Java2JSClassVisitor extends ClassVisitor {
 
 //    	cCtx.print("var ");
     	cCtx.print(jsClassName);
-    	if ("java/lang/Object".equals(superName)) {
-    		cCtx.print(" = (function ()");
-        	cCtx.pushScope();
-    	} else {
+//    	if ("java/lang/Object".equals(superName)) {
+//    		cCtx.print(" = (function ()");
+//        	cCtx.pushScope();
+//    	} else {
     		cCtx.print(" = (function (_super)");
         	cCtx.pushScope();
     		cCtx.print("__extends(");
     		cCtx.print(jsClassName);
     		cCtx.println(", _super);");
-    	}
+//    	}
     }
 
 	@Override
@@ -95,9 +95,9 @@ public class Java2JSClassVisitor extends ClassVisitor {
     	cCtx.println(";");
     	cCtx.popScope();
     	cCtx.print(")(");
-    	if (!"java_lang_Object".equals(superClassName)) {
+//    	if (!"java_lang_Object".equals(superClassName)) {
     		cCtx.print(superClassName);
-    	}
+//    	}
     	cCtx.println(");");
     }
 }
