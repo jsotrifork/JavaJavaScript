@@ -22,6 +22,23 @@ public class Switch {
 		}
 	}
 
+	public static void nonConsequtiveSwitch(int x) {
+		switch (x) {
+		case 2:
+			System.out.print("two");
+			break;
+		case 200:
+			System.out.print("twohundred");
+			break;
+		case 2000:
+			System.out.print("twothousend");
+			break;
+		default:
+			System.out.print("default");
+			break;
+		}
+	}
+
 	public static void switchNoDefault(int x) {
 		switch (x) {
 		case 1:

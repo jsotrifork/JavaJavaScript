@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import javax.script.ScriptException;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.trifork.jjs.testsuite.AbstractRhinoTest;
@@ -45,6 +46,25 @@ public class SwitchTest extends AbstractRhinoTest {
 		
 		invokeStatic(Switch.class, "switchNoBreak", 2);
 		assertEquals("twothreedefault", getOutput());
+
+	}
+
+	@Test
+	public void lookupSwitch() throws ScriptException, IOException {
+		compileAndEvalClass(Switch.class);
+		
+		invokeStatic(Switch.class, "nonConsequtiveSwitch", 200);
+		assertEquals("twohundred", getOutput());
+
+	}
+
+	@Ignore
+	@Test
+	public void switchOnString() throws ScriptException, IOException {
+		compileAndEvalClass(Switch.class);
+		
+		invokeStatic(Switch.class, "switchNoString", "two");
+		assertEquals("2", getOutput());
 
 	}
 }

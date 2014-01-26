@@ -265,29 +265,20 @@ public class ControlFlow {
 
 	}
 
-	class TableSwitch extends Control {
+	abstract class AbstractSwitch extends Control {
 
 		private String on;
-		private int min;
-		private int max;
 		private Label defaultLabel;
-		private IdentityHashMap<Label, Integer> label2Index = new IdentityHashMap<Label, Integer>();
 		private Label[] labels;
-		private HashSet<Label> visitedLabels = new HashSet<>();
 		private HashSet<Label> endLabelCandidates = new HashSet<>();
-//		private SwitchRangeMap switchRangeMap;
 		
-		TableSwitch(String on, int min, int max, Label defaultLabel, Label[] labels) {
+		
+		public AbstractSwitch(String on, Label defaultLabel, Label[] labels) {
 			this.on = on;
-			this.min = min;
-			this.max = max;
 			this.defaultLabel = defaultLabel;
 			this.labels = labels;
-			for (int i = min; i <= max; i++) {
-				this.label2Index.put(labels[i - min], i);
-			}
 		}
-		
+
 		@Override
 		Object acceptLabel(Label label) {
 
@@ -298,7 +289,7 @@ public class ControlFlow {
 				return "}";
 			}
 			
-			Integer caseValue = label2Index.get(label);
+			Object caseValue = getCaseForLabel(label);
 			if (caseValue != null) {
 				// This label belongs to the current switch statement
 
@@ -307,17 +298,17 @@ public class ControlFlow {
 				mCtx.maybeEndStatement();
 				
 				if (defaultLabel == label) {
-					visitedLabels.add(label);
 					return "default:";
 				} else {
 					
-					visitedLabels.add(label);
 					return "case " + caseValue + ":";
 				}
 
 			}	
 			return null;
 		}
+
+		abstract Object getCaseForLabel(Label label);
 
 		private void handleOrphanGotos() {
 			// Check if control stack has an orphan goto belonging to previous case on top. 
@@ -358,46 +349,41 @@ public class ControlFlow {
 
 	}
 
-	class LookupSwitch extends Control {
+	class TableSwitch extends AbstractSwitch {
+		private int min;
+		private int max;
+		private IdentityHashMap<Label, Integer> label2Index = new IdentityHashMap<Label, Integer>();
 
-		private String on;
-		private Label defaultLabel;
-		private HashMap<Label, Integer> map = new HashMap<Label, Integer>();
+		TableSwitch(String on, int min, int max, Label defaultLabel, Label[] labels) {
+			super(on, defaultLabel, labels);
+			this.min = min;
+			this.max = max;
+			for (int i = min; i <= max; i++) {
+				this.label2Index.put(labels[i - min], i);
+			}
+		}
+
+		@Override
+		Object getCaseForLabel(Label label) {
+			return label2Index.get(label);
+		}
+	}	
+
+	class LookupSwitch extends AbstractSwitch {
+
+		private IdentityHashMap<Label, Integer> label2Key = new IdentityHashMap<>();
 		
 		LookupSwitch(String on, Label defaultLabel, int[] keys, Label[] labels) {
-			this.on = on;
-			this.defaultLabel = defaultLabel;
+			super(on, defaultLabel, labels);
 			
 			for (int i = 0; i < keys.length; i++) {
-				this.map.put(labels[i], keys[i]);
+				label2Key.put(labels[i], keys[i]);
 			}
-		}
-		
-		@Override
-		Object acceptLabel(Label label) {
-			if (defaultLabel == label) {
-				return "default:";
-			} else {
-				Integer caseValue = map.get(label);
-				if (caseValue != null) {
-					// This label belongs to the current switch statement
-					return "case " + caseValue + ":";
-				}	
-			}
-			return null;
 		}
 
 		@Override
-		public String toString() {
-			return "switch (" + on + ") {";
-		}
-
-		@Override
-		Object acceptGoto(Goto goTo) {
-			// TODO Auto-generated method stub
-			return null;
+		Object getCaseForLabel(Label label) {
+			return label2Key.get(label);
 		}
 	}
-
-
 }
