@@ -1,20 +1,19 @@
-
+DONE: 
 Javascript runtime (class extension mechanism)
-
-Custom Javascript implementation of core jdk classes (java.lang.Class, ...)
-
-Interceptor mechanism in code generator (allowing custom generation for specific method invocations, e.g., java.lang.StringBuilder.append)
-
-Interface to gwt-style native methods (interrupt current compilation unit and load .java source from classpath and scan for native methods). 
-
-Annotations based native methods
-
 Implement remote classloading through synchrounous xmlhttprequest
+Test suite using rhino
 
+IN PROGRESS:
+Translate basic control structures (if, if/else, while, do-while, for, switch, break, continue)
+
+TODO: 
+Translate exception handling
+Custom Javascript implementation of core jdk classes (java.lang.Class, java.lang.String, ...)
+Interceptor mechanism in code generator (allowing custom generation for specific method invocations, e.g., java.lang.StringBuilder.append)
+Interface to gwt-style native methods (interrupt current compilation unit and load .java source from classpath and scan for native methods). 
+Annotations based native methods
 Adaptive remote class preload (collect (persistent) statistics)
-
 Reflection
 
-Test suite using rhino
 
 
