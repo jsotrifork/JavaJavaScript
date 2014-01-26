@@ -3,7 +3,7 @@ package com.trifork.jjs.visitor;
 import java.util.ArrayList;
 
 public class AggregatedResult {
-	ArrayList<Object> l = new ArrayList<>();
+	ArrayList<Object> l = new ArrayList<Object>();
 	
 	public void add(Object o) {
 		l.add(o);

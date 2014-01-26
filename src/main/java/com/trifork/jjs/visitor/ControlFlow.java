@@ -10,7 +10,7 @@ import org.objectweb.asm.Label;
 
 public class ControlFlow {
 
-	private IdentityHashMap<Label, LabelPlaceholder> labelMap = new IdentityHashMap<>();
+	private IdentityHashMap<Label, LabelPlaceholder> labelMap = new IdentityHashMap<Label, LabelPlaceholder>();
 	private Deque<Control> controlStack = new ArrayDeque<Control>();
 	private Label currentLabel;
 	private MethodContext mCtx;
@@ -270,7 +270,7 @@ public class ControlFlow {
 		private String on;
 		private Label defaultLabel;
 		private Label[] labels;
-		private HashSet<Label> endLabelCandidates = new HashSet<>();
+		private HashSet<Label> endLabelCandidates = new HashSet<Label>();
 		
 		
 		public AbstractSwitch(String on, Label defaultLabel, Label[] labels) {
@@ -371,7 +371,7 @@ public class ControlFlow {
 
 	class LookupSwitch extends AbstractSwitch {
 
-		private IdentityHashMap<Label, Integer> label2Key = new IdentityHashMap<>();
+		private IdentityHashMap<Label, Integer> label2Key = new IdentityHashMap<Label, Integer>();
 		
 		LookupSwitch(String on, Label defaultLabel, int[] keys, Label[] labels) {
 			super(on, defaultLabel, labels);
